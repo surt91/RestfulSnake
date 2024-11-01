@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AutopilotFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.snake.ai</a> &gt; <span class="el_source">AutopilotFactory.java</span></div><h1>AutopilotFactory.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.snake.ai;
+
+import org.yaml.snakeyaml.Yaml;
+
+import java.io.InputStream;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+public class AutopilotFactory {
+    // TODO: add a method to register new autopilot classes
+
+    private final Map&lt;String, AutopilotDescription&gt; autopilots;
+
+<span class="fc" id="L16">    public AutopilotFactory() {</span>
+<span class="fc" id="L17">        autopilots = listAutopilots();</span>
+<span class="fc" id="L18">    }</span>
+
+    public Autopilot build(String id) {
+<span class="fc" id="L21">        AutopilotDescription desc = autopilots.get(id);</span>
+
+        Autopilot autopilot;
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if(Objects.equals(desc.modelPath(), &quot;greedy&quot;)) {</span>
+<span class="fc" id="L25">            autopilot = new GreedyAutopilot();</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        } else if(Objects.equals(desc.modelPath(), &quot;random&quot;)) {</span>
+<span class="fc" id="L27">            autopilot = new RandomAutopilot();</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        } else if(Objects.equals(desc.modelPath(), &quot;boring&quot;)) {</span>
+<span class="fc" id="L29">            autopilot = new BoringAutopilot();</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        } else if (desc.input().equals(&quot;local&quot;)) {</span>
+<span class="fc" id="L31">            autopilot = new LocalDeepAutopilot(desc.modelPath(), desc.mode().equals(&quot;functional&quot;));</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        } else if (desc.input().equals(&quot;global&quot;)) {</span>
+<span class="fc" id="L33">            autopilot = new GlobalDeepAutopilot(desc.modelPath(), desc.mode().equals(&quot;functional&quot;));</span>
+        } else {
+            // TODO: handle the unexpected input
+<span class="nc" id="L36">            autopilot = new RandomAutopilot();</span>
+        }
+
+<span class="fc" id="L39">        return autopilot;</span>
+    }
+
+    private static Map&lt;String, AutopilotDescription&gt; listAutopilots() {
+<span class="fc" id="L43">        Yaml yaml = new Yaml();</span>
+<span class="fc" id="L44">        InputStream inputStream = AutopilotFactory.class</span>
+<span class="fc" id="L45">                .getClassLoader()</span>
+<span class="fc" id="L46">                .getResourceAsStream(&quot;models/strategies.yaml&quot;);</span>
+<span class="fc" id="L47">        List&lt;Map&lt;String, String&gt;&gt; array = yaml.load(inputStream);</span>
+
+<span class="fc" id="L49">        LinkedHashMap&lt;String, AutopilotDescription&gt; out = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        for (Map&lt;String, String&gt; obj : array) {</span>
+
+<span class="fc" id="L53">            var desc = new AutopilotDescription(</span>
+<span class="fc" id="L54">                    obj.get(&quot;id&quot;),</span>
+<span class="fc" id="L55">                    obj.get(&quot;model_path_java&quot;),</span>
+<span class="fc" id="L56">                    obj.get(&quot;input&quot;),</span>
+<span class="fc" id="L57">                    obj.get(&quot;mode&quot;),</span>
+<span class="fc" id="L58">                    obj.get(&quot;label&quot;),</span>
+<span class="fc" id="L59">                    obj.get(&quot;description&quot;)</span>
+            );
+<span class="fc" id="L61">            out.put(obj.get(&quot;id&quot;), desc);</span>
+<span class="fc" id="L62">        }</span>
+        
+<span class="fc" id="L64">        return out;</span>
+    }
+
+    public Map&lt;String, AutopilotDescription&gt; getAutopilots() {
+<span class="fc" id="L68">        return autopilots;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

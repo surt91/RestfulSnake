@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.gamemanagement</a> &gt; <span class="el_source">GameController.java</span></div><h1>GameController.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.gamemanagement;
+
+import me.schawe.multijsnake.gamemanagement.player.PlayerId;
+import me.schawe.multijsnake.snake.Move;
+import me.schawe.multijsnake.snake.ai.AutopilotDescription;
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+public class GameController {
+    private final GameService map;
+
+<span class="fc" id="L18">    public GameController(GameService map) {</span>
+<span class="fc" id="L19">        this.map = map;</span>
+<span class="fc" id="L20">    }</span>
+
+    @PostMapping(&quot;/api/close/{id}&quot;)
+    public ResponseEntity&lt;?&gt; init(@PathVariable String id) {
+<span class="fc" id="L24">        map.close(id);</span>
+<span class="fc" id="L25">        return ResponseEntity.ok(&quot;&quot;);</span>
+    }
+
+    @GetMapping(&quot;/api/listAi&quot;)
+    public List&lt;AutopilotDescription&gt; listAi() {
+<span class="fc" id="L30">        return map.listAi();</span>
+    }
+
+    @MessageMapping(&quot;/joinNewGame/{id}/{width}/{height}&quot;)
+    public PlayerId joinNewGame(@Header(&quot;simpSessionId&quot;) String sessionId, @DestinationVariable String id, @DestinationVariable int width, @DestinationVariable int height) {
+<span class="fc" id="L35">        return map.joinNewGame(sessionId, id, width, height);</span>
+    }
+
+    @MessageMapping(&quot;/join/{id}&quot;)
+    public PlayerId join(@Header(&quot;simpSessionId&quot;) String sessionId, @DestinationVariable String id) {
+<span class="fc" id="L40">        return map.join(sessionId, id);</span>
+    }
+
+    @MessageMapping(&quot;/pause/{playerIdString}&quot;)
+    public void pause(@DestinationVariable String playerIdString) {
+<span class="fc" id="L45">        PlayerId playerId = new PlayerId(playerIdString);</span>
+<span class="fc" id="L46">        map.pause(playerId);</span>
+<span class="fc" id="L47">    }</span>
+
+    @MessageMapping(&quot;/unpause/{playerIdString}&quot;)
+    public void unpause(@DestinationVariable String playerIdString) {
+<span class="fc" id="L51">        PlayerId playerId = new PlayerId(playerIdString);</span>
+<span class="fc" id="L52">        map.unpause(playerId);</span>
+<span class="fc" id="L53">    }</span>
+
+    @MessageMapping(&quot;/reset/{playerIdString}&quot;)
+    public void reset(@DestinationVariable String playerIdString) {
+<span class="fc" id="L57">        PlayerId playerId = new PlayerId(playerIdString);</span>
+<span class="fc" id="L58">        map.reset(playerId);</span>
+<span class="fc" id="L59">    }</span>
+
+    @MessageMapping(&quot;/move/{playerIdString}&quot;)
+    public void move(@DestinationVariable String playerIdString, Move move) {
+<span class="fc" id="L63">        PlayerId playerId = new PlayerId(playerIdString);</span>
+<span class="fc" id="L64">        map.move(playerId, move);</span>
+<span class="fc" id="L65">    }</span>
+
+    @MessageMapping(&quot;/setName/{playerIdString}&quot;)
+    public void setName(@DestinationVariable String playerIdString, String name) {
+<span class="fc" id="L69">        PlayerId playerId = new PlayerId(playerIdString);</span>
+<span class="fc" id="L70">        map.setName(playerId, name);</span>
+<span class="fc" id="L71">    }</span>
+
+    @MessageMapping(&quot;/addAI/{playerIdString}&quot;)
+    public void addAI(@DestinationVariable String playerIdString, String type) {
+<span class="fc" id="L75">        PlayerId playerId = new PlayerId(playerIdString);</span>
+<span class="fc" id="L76">        map.addAI(playerId, type);</span>
+<span class="fc" id="L77">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

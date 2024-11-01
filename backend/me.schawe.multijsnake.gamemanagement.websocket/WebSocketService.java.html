@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebSocketService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.gamemanagement.websocket</a> &gt; <span class="el_source">WebSocketService.java</span></div><h1>WebSocketService.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.gamemanagement.websocket;
+
+import me.schawe.multijsnake.gamemanagement.player.PlayerInfo;
+import me.schawe.multijsnake.gamemanagement.player.PlayerInfoForClient;
+import me.schawe.multijsnake.highscore.HighscoreRepository;
+import me.schawe.multijsnake.snake.GameState;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Component;
+
+import static me.schawe.multijsnake.gamemanagement.websocket.WebSocketConfiguration.MESSAGE_PREFIX;
+
+@Component
+public class WebSocketService {
+    private final SimpMessagingTemplate websocket;
+    private final HighscoreRepository repo;
+
+<span class="fc" id="L20">    public WebSocketService(SimpMessagingTemplate websocket, HighscoreRepository repo) {</span>
+<span class="fc" id="L21">        this.websocket = websocket;</span>
+<span class="fc" id="L22">        this.repo = repo;</span>
+<span class="fc" id="L23">    }</span>
+
+    public void update(GameState gameState) {
+<span class="fc" id="L26">        this.websocket.convertAndSend(</span>
+<span class="fc" id="L27">                MESSAGE_PREFIX + &quot;/update/&quot; + gameState.getId(), gameState);</span>
+<span class="fc" id="L28">    }</span>
+
+    public void updateHighscore(int size) {
+<span class="fc" id="L31">        this.websocket.convertAndSend(</span>
+<span class="fc" id="L32">                MESSAGE_PREFIX + &quot;/newHighscore&quot;, repo.findTop10ByFieldSizeOrderByScoreDesc(size));</span>
+<span class="fc" id="L33">    }</span>
+
+    public void updateGlobalHighscore() {
+<span class="fc" id="L36">        this.websocket.convertAndSend(</span>
+<span class="fc" id="L37">                MESSAGE_PREFIX + &quot;/newGlobalHighscore&quot;, repo.findTop10ByOrderByScoreDesc());</span>
+<span class="fc" id="L38">    }</span>
+
+    public void notifyJoined(PlayerInfo playerInfo) {
+<span class="fc" id="L41">        PlayerInfoForClient payload = new PlayerInfoForClient(playerInfo);</span>
+<span class="fc" id="L42">        System.out.println(&quot;notify&quot; + playerInfo);</span>
+<span class="fc" id="L43">        this.websocket.convertAndSendToUser(</span>
+<span class="fc" id="L44">                playerInfo.sessionId(),</span>
+                &quot;/queue/joined&quot;,
+                payload,
+<span class="fc" id="L47">                createHeaders(playerInfo.sessionId())</span>
+        );
+<span class="fc" id="L49">    }</span>
+
+    private MessageHeaders createHeaders(String sessionId) {
+<span class="fc" id="L52">        SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);</span>
+<span class="fc" id="L53">        headerAccessor.setSessionId(sessionId);</span>
+<span class="fc" id="L54">        headerAccessor.setLeaveMutable(true);</span>
+<span class="fc" id="L55">        return headerAccessor.getMessageHeaders();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

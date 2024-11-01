@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserDetailsImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.usermanagement</a> &gt; <span class="el_source">UserDetailsImpl.java</span></div><h1>UserDetailsImpl.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.usermanagement;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+
+public class UserDetailsImpl implements UserDetails {
+    private static final long serialVersionUID = 1L;
+
+    private final Long id;
+    private final String username;
+    private final String email;
+    @JsonIgnore
+    private final String password;
+    private final Collection&lt;? extends GrantedAuthority&gt; authorities;
+
+    public UserDetailsImpl(Long id, String username, String email, String password,
+<span class="fc" id="L24">                           Collection&lt;? extends GrantedAuthority&gt; authorities) {</span>
+<span class="fc" id="L25">        this.id = id;</span>
+<span class="fc" id="L26">        this.username = username;</span>
+<span class="fc" id="L27">        this.email = email;</span>
+<span class="fc" id="L28">        this.password = password;</span>
+<span class="fc" id="L29">        this.authorities = authorities;</span>
+<span class="fc" id="L30">    }</span>
+
+    public static UserDetailsImpl build(User user) {
+//        List&lt;GrantedAuthority&gt; authorities = user.getRoles().stream()
+//                .map(role -&gt; new SimpleGrantedAuthority(role.getName().name()))
+//                .collect(Collectors.toList());
+
+<span class="fc" id="L37">        List&lt;GrantedAuthority&gt; authorities = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L38">        authorities.add(new SimpleGrantedAuthority(&quot;USER&quot;));</span>
+
+<span class="fc" id="L40">        return new UserDetailsImpl(</span>
+<span class="fc" id="L41">                user.getId(),</span>
+<span class="fc" id="L42">                user.getUsername(),</span>
+<span class="fc" id="L43">                user.getEmail(),</span>
+<span class="fc" id="L44">                user.getHashedPassword(),</span>
+                authorities
+        );
+    }
+
+    @Override
+    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
+<span class="fc" id="L51">        return authorities;</span>
+    }
+
+    public Long getId() {
+<span class="fc" id="L55">        return id;</span>
+    }
+
+    public String getEmail() {
+<span class="fc" id="L59">        return email;</span>
+    }
+
+    @Override
+    public String getPassword() {
+<span class="fc" id="L64">        return password;</span>
+    }
+
+    @Override
+    public String getUsername() {
+<span class="fc" id="L69">        return username;</span>
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+<span class="fc" id="L74">        return true;</span>
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+<span class="fc" id="L79">        return true;</span>
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+<span class="fc" id="L84">        return true;</span>
+    }
+
+    @Override
+    public boolean isEnabled() {
+<span class="fc" id="L89">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Coordinate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.snake</a> &gt; <span class="el_source">Coordinate.java</span></div><h1>Coordinate.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.snake;
+
+import java.util.Objects;
+
+public class Coordinate {
+    private final int x;
+    private final int y;
+
+    public int getX() {
+<span class="fc" id="L10">        return x;</span>
+    }
+
+    public int getY() {
+<span class="fc" id="L14">        return y;</span>
+    }
+
+<span class="fc" id="L17">    public Coordinate(int xi, int yi) {</span>
+<span class="fc" id="L18">        x = xi;</span>
+<span class="fc" id="L19">        y = yi;</span>
+<span class="fc" id="L20">    }</span>
+
+    public Coordinate copy() {
+<span class="fc" id="L23">        return new Coordinate(x, y);</span>
+    }
+
+    public Coordinate add(Coordinate other){
+<span class="fc" id="L27">        return new Coordinate(</span>
+            this.x + other.x,
+            this.y + other.y
+        );
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L35">        return &quot;Coordinate{&quot; +</span>
+                &quot;x=&quot; + x +
+                &quot;, y=&quot; + y +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L44" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L45">        Coordinate that = (Coordinate) o;</span>
+<span class="fc bfc" id="L46" title="All 4 branches covered.">        return x == that.x &amp;&amp; y == that.y;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L51">        return Objects.hash(x, y);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

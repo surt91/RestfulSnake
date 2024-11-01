@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameState.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.snake</a> &gt; <span class="el_source">GameState.java</span></div><h1>GameState.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.snake;
+
+import me.schawe.multijsnake.gamemanagement.exceptions.InvalidMapException;
+import me.schawe.multijsnake.snake.ai.Autopilot;
+import me.schawe.multijsnake.util.IdGenerator;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+public class GameState {
+    private final String id;
+    private final int width;
+    private final int height;
+    private Coordinate food;
+    private final Map&lt;SnakeId, Snake&gt; snakes;
+    private Set&lt;Coordinate&gt; occupationMap;
+    private int score;
+    private boolean paused;
+    private boolean gameOver;
+    private final List&lt;SnakeId&gt; toBeRemoved;
+    // TODO: replace by event listener
+    private Consumer&lt;Snake&gt; snakeDiesCallback;
+    private final Random random;
+    private int monotonousSnakeCounter;
+<span class="fc" id="L35">    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();</span>
+
+<span class="fc" id="L37">    public GameState(int width, int height, Random random, String id) {</span>
+<span class="fc" id="L38">        this.id = id;</span>
+<span class="fc" id="L39">        this.width = width;</span>
+<span class="fc" id="L40">        this.height = height;</span>
+<span class="fc" id="L41">        this.random = random;</span>
+
+<span class="fc" id="L43">        score = 0;</span>
+<span class="fc" id="L44">        snakes = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L45">        occupationMap = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L46">        toBeRemoved = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L47">        addFood();</span>
+<span class="fc" id="L48">        paused = true;</span>
+<span class="fc" id="L49">        gameOver = false;</span>
+<span class="fc" id="L50">        this.snakeDiesCallback = x -&gt; {};</span>
+
+<span class="fc" id="L52">        monotonousSnakeCounter = 0;</span>
+<span class="fc" id="L53">    }</span>
+
+    public GameState(int width, int height, long seed) {
+<span class="fc" id="L56">        this(width, height, new Random(seed), IdGenerator.gen(new Random(seed)));</span>
+<span class="fc" id="L57">    }</span>
+
+    // if we fix the id, derive the RNG state from this id.
+    // this is handy for tests, but might be a bit surprising
+    public GameState(int width, int height, String id) {
+<span class="fc" id="L62">        this(width, height, new Random(id.hashCode()), id);</span>
+<span class="fc" id="L63">    }</span>
+
+    public GameState(int width, int height) {
+<span class="fc" id="L66">        this(width, height, new Random(), IdGenerator.gen(new Random()));</span>
+<span class="fc" id="L67">    }</span>
+
+    public String getId() {
+<span class="fc" id="L70">        return id;</span>
+    }
+
+    public int getWidth() {
+<span class="fc" id="L74">        return width;</span>
+    }
+
+    public int getHeight() {
+<span class="fc" id="L78">        return height;</span>
+    }
+
+    public Coordinate getFood() {
+<span class="fc" id="L82">        return food;</span>
+    }
+
+    public int getScore() {
+<span class="fc" id="L86">        return score;</span>
+    }
+
+    public Map&lt;Integer, Snake&gt; getSnakes() {
+<span class="fc" id="L90">        rwLock.readLock().lock();</span>
+        try {
+<span class="fc" id="L92">            return snakes.entrySet().stream()</span>
+<span class="fc" id="L93">                    .collect(Collectors.toMap(entry -&gt; entry.getKey().getIdx(), Map.Entry::getValue));</span>
+        } finally {
+<span class="fc" id="L95">            rwLock.readLock().unlock();</span>
+        }
+    }
+
+    public Collection&lt;Snake&gt; getSnakeSet() {
+<span class="fc" id="L100">        return snakes.values();</span>
+    }
+
+    public Snake getSnake(SnakeId snakeId) {
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (!snakeId.getId().equals(id)) {</span>
+<span class="fc" id="L105">            throw new InvalidMapException(&quot;snake &quot; + snakeId + &quot; does not live in GameState &quot; + snakeId.getId());</span>
+        }
+
+<span class="fc" id="L108">        return snakes.get(snakeId);</span>
+    }
+
+    public boolean isPaused() {
+<span class="fc" id="L112">        return paused;</span>
+    }
+
+    public boolean isGameOver() {
+<span class="fc" id="L116">        return gameOver;</span>
+    }
+
+    public void setPause(boolean paused) {
+<span class="fc" id="L120">        this.paused = paused;</span>
+<span class="fc" id="L121">    }</span>
+
+    public void setSnakeDiesCallback(Consumer&lt;Snake&gt; snakeDiesCallback) {
+<span class="fc" id="L124">        this.snakeDiesCallback = snakeDiesCallback;</span>
+<span class="fc" id="L125">    }</span>
+
+    public void changeName(SnakeId id, String name) {
+<span class="fc" id="L128">        snakes.get(id).setName(name);</span>
+<span class="fc" id="L129">    }</span>
+
+    public SnakeId addSnake() {
+<span class="fc" id="L132">        return addSnake(randomUnoccupiedSite());</span>
+    }
+
+    public SnakeId addSnake(Coordinate coordinate) {
+<span class="fc" id="L136">        return addSnake(coordinate, Move.random(random));</span>
+    }
+
+    public SnakeId addSnake(Coordinate coordinate, Move direction) {
+<span class="fc" id="L140">        return addSnake(coordinate, direction, null);</span>
+    }
+
+    public SnakeId addAISnake(Autopilot autopilot) {
+<span class="fc" id="L144">        return addSnake(randomUnoccupiedSite(), Move.random(random), autopilot);</span>
+    }
+
+    public SnakeId addSnake(Coordinate coordinate, Move direction, Autopilot autopilot) {
+<span class="fc" id="L148">        rwLock.writeLock().lock();</span>
+        try {
+<span class="fc" id="L150">            int idx = monotonousSnakeCounter++;</span>
+<span class="fc" id="L151">            SnakeId snakeId = new SnakeId(this.id, idx);</span>
+<span class="fc" id="L152">            Snake snake = new Snake(snakeId, coordinate, direction, autopilot);</span>
+<span class="fc" id="L153">            snakes.put(snakeId, snake);</span>
+<span class="fc" id="L154">            return snakeId;</span>
+        } finally {
+<span class="fc" id="L156">            rwLock.writeLock().unlock();</span>
+        }
+    }
+
+    // signal if a site is occupied by either tail or head
+    public boolean isOccupied(Coordinate site) {
+<span class="fc" id="L162">        rwLock.readLock().lock();</span>
+        try {
+<span class="fc" id="L164">            Set&lt;Coordinate&gt; heads = snakes.values().stream()</span>
+<span class="fc" id="L165">                    .map(Snake::getHead)</span>
+<span class="fc" id="L166">                    .collect(Collectors.toSet());</span>
+<span class="fc bfc" id="L167" title="All 4 branches covered.">            return occupationMap.contains(site) || heads.contains(site);</span>
+        } finally {
+<span class="fc" id="L169">            rwLock.readLock().unlock();</span>
+        }
+    }
+
+    // signal if a site is occupied for the specified snake by either tail or head, except its own head
+    public boolean isOccupied(Coordinate site, Snake snake) {
+<span class="fc" id="L175">        rwLock.readLock().lock();</span>
+        try {
+<span class="fc" id="L177">            Set&lt;Coordinate&gt; otherHeads = snakes.values().stream()</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                    .filter(s -&gt; !s.equals(snake))</span>
+<span class="fc" id="L179">                    .map(Snake::getHead)</span>
+<span class="fc" id="L180">                    .collect(Collectors.toSet());</span>
+
+<span class="pc bpc" id="L182" title="1 of 4 branches missed.">            return occupationMap.contains(site) || otherHeads.contains(site);</span>
+        } finally {
+<span class="fc" id="L184">            rwLock.readLock().unlock();</span>
+        }
+    }
+
+    public boolean isWall(Coordinate coordinate) {
+<span class="fc" id="L189">        rwLock.readLock().lock();</span>
+        try {
+<span class="fc bfc" id="L191" title="All 2 branches covered.">            return coordinate.getX() &lt; 0</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                    || coordinate.getX() &gt;= width</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">                    || coordinate.getY() &lt; 0</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                    || coordinate.getY() &gt;= height;</span>
+        } finally {
+<span class="fc" id="L196">            rwLock.readLock().unlock();</span>
+        }
+    }
+
+    public boolean isEating(Snake snake) {
+<span class="fc" id="L201">        rwLock.readLock().lock();</span>
+        try {
+<span class="fc" id="L203">            return snake.getHead().equals(food);</span>
+        } finally {
+<span class="fc" id="L205">            rwLock.readLock().unlock();</span>
+        }
+    }
+
+    private Coordinate randomUnoccupiedSite() {
+<span class="fc" id="L210">        rwLock.readLock().lock();</span>
+        try {
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">            if(checkPerfectGame()) {</span>
+                // this should have been checked, and should therefore not happen
+<span class="nc" id="L214">                throw new RuntimeException(&quot;Perfect Game!&quot;);</span>
+            }
+
+            Coordinate site;
+            do {
+<span class="fc" id="L219">                site = randomSite();</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">            } while (isOccupied(site));</span>
+<span class="fc" id="L221">            return site;</span>
+        } finally {
+<span class="fc" id="L223">            rwLock.readLock().unlock();</span>
+        }
+    }
+
+    private Coordinate randomSite() {
+<span class="fc" id="L228">        return new Coordinate((int) (random.nextFloat() * width), (int) (random.nextFloat() * height));</span>
+    }
+
+    public void addFood() {
+<span class="fc" id="L232">        addFood(randomUnoccupiedSite());</span>
+<span class="fc" id="L233">    }</span>
+
+    public void addFood(Coordinate coordinate) {
+<span class="fc" id="L236">        rwLock.writeLock().lock();</span>
+        try {
+<span class="fc" id="L238">            food = coordinate;</span>
+        } finally {
+<span class="fc" id="L240">            rwLock.writeLock().unlock();</span>
+        }
+<span class="fc" id="L242">    }</span>
+
+    // TODO: call turn method on snake?
+    public void turn(SnakeId id, Move move) {
+<span class="fc" id="L246">        rwLock.writeLock().lock();</span>
+        try {
+<span class="fc" id="L248">            Snake snake = getSnake(id);</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">            if(!snake.isDead()) {</span>
+<span class="fc" id="L250">                snake.setHeadDirection(</span>
+<span class="fc" id="L251">                        move.toNext(snake.getLastHeadDirection())</span>
+<span class="fc" id="L252">                            .orElse(snake.getHeadDirection())</span>
+                );
+            }
+        } finally {
+<span class="fc" id="L256">            rwLock.writeLock().unlock();</span>
+        }
+<span class="fc" id="L258">    }</span>
+
+    public boolean checkPerfectGame() {
+<span class="fc" id="L261">        rwLock.readLock().lock();</span>
+        try {
+<span class="fc" id="L263">            int occupied_fields = snakes.values().stream()</span>
+<span class="fc" id="L264">                    .map(snake -&gt; snake.getLength() + 1)  // +1 for the heads</span>
+<span class="fc" id="L265">                    .mapToInt(Integer::intValue)</span>
+<span class="fc" id="L266">                    .sum();</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">            return occupied_fields == width * height - 1; // -1 to place new food</span>
+        } finally {
+<span class="fc" id="L269">            rwLock.readLock().unlock();</span>
+        }
+    }
+
+    public void kill(SnakeId id) {
+<span class="fc" id="L274">        rwLock.writeLock().lock();</span>
+        try {
+<span class="fc" id="L276">            Snake snake = getSnake(id);</span>
+            // killing snakes twice would lead to double highscores
+<span class="fc bfc" id="L278" title="All 2 branches covered.">            if (!snake.isDead()) {</span>
+<span class="fc" id="L279">                snake.kill();</span>
+<span class="fc" id="L280">                snakeDiesCallback.accept(snake);</span>
+            }
+        } finally {
+<span class="fc" id="L283">            rwLock.writeLock().unlock();</span>
+        }
+<span class="fc" id="L285">    }</span>
+
+    // check whether this game was abandoned by all human players
+    public boolean isAbandoned() {
+<span class="fc" id="L289">        rwLock.readLock().lock();</span>
+        try {
+<span class="fc" id="L291">            long numActivePlayers = snakes.values().stream()</span>
+<span class="fc bfc" id="L292" title="All 4 branches covered.">                    .filter(snake -&gt; snake.ai().isEmpty() &amp;&amp; !toBeRemoved.contains(snake.getId()))</span>
+<span class="fc" id="L293">                    .count();</span>
+
+            // games can only be created by joining, so if there are no active players, it is abandoned
+<span class="fc bfc" id="L296" title="All 2 branches covered.">            return numActivePlayers == 0;</span>
+        } finally {
+<span class="fc" id="L298">            rwLock.readLock().unlock();</span>
+        }
+    }
+
+    public void markForRemoval(SnakeId id) {
+<span class="fc" id="L303">        rwLock.writeLock().lock();</span>
+        try {
+<span class="fc" id="L305">            toBeRemoved.add(id);</span>
+        } finally {
+<span class="fc" id="L307">            rwLock.writeLock().unlock();</span>
+        }
+<span class="fc" id="L309">    }</span>
+
+    public void reset() {
+<span class="fc" id="L312">        rwLock.writeLock().lock();</span>
+        try {
+<span class="fc bfc" id="L314" title="All 2 branches covered.">            for(SnakeId snakeId : toBeRemoved) {</span>
+<span class="fc" id="L315">                snakes.remove(snakeId);</span>
+<span class="fc" id="L316">            }</span>
+<span class="fc" id="L317">            toBeRemoved.clear();</span>
+
+<span class="fc bfc" id="L319" title="All 2 branches covered.">            for(Snake snake : snakes.values()) {</span>
+<span class="fc" id="L320">                snake.reset(randomSite());</span>
+<span class="fc" id="L321">            }</span>
+<span class="fc" id="L322">            score = 0;</span>
+<span class="fc" id="L323">            addFood();</span>
+<span class="fc" id="L324">            paused = true;</span>
+<span class="fc" id="L325">            gameOver = false;</span>
+        } finally {
+<span class="fc" id="L327">            rwLock.writeLock().unlock();</span>
+        }
+<span class="fc" id="L329">    }</span>
+
+    public void update() {
+<span class="fc" id="L332">        rwLock.writeLock().lock();</span>
+        try {
+<span class="fc bfc" id="L334" title="All 2 branches covered.">            if(checkPerfectGame()) {</span>
+<span class="fc" id="L335">                gameOver = true;</span>
+            }
+
+<span class="fc bfc" id="L338" title="All 2 branches covered.">            if(gameOver) {</span>
+<span class="fc" id="L339">                return;</span>
+            }
+
+<span class="pc bpc" id="L342" title="1 of 2 branches missed.">            if(paused) {</span>
+<span class="nc" id="L343">                return;</span>
+            }
+
+<span class="fc bfc" id="L346" title="All 2 branches covered.">            for (Snake snake : snakes.values()) {</span>
+<span class="fc bfc" id="L347" title="All 2 branches covered.">                if (snake.isDead()) {</span>
+<span class="fc" id="L348">                    continue;</span>
+                }
+
+<span class="fc" id="L351">                snake.ai().ifPresent(autopilot -&gt; snake.setHeadDirection(autopilot.suggest(this, snake)));</span>
+
+<span class="fc bfc" id="L353" title="All 2 branches covered.">                if (isEating(snake)) {</span>
+<span class="fc" id="L354">                    addFood();</span>
+<span class="fc" id="L355">                    snake.incrementLength();</span>
+<span class="fc" id="L356">                    score += 1;</span>
+                }
+
+<span class="fc" id="L359">                snake.step();</span>
+<span class="fc" id="L360">            }</span>
+
+            // update the occupation map after movement
+<span class="fc" id="L363">            occupationMap = snakes.values().stream()</span>
+<span class="fc" id="L364">                .flatMap(snake -&gt; snake.getTail().stream())</span>
+<span class="fc" id="L365">                .collect(Collectors.toSet());</span>
+
+            // check if any snakes stepped on occupied sites
+<span class="fc bfc" id="L368" title="All 2 branches covered.">            for (Snake snake : snakes.values()) {</span>
+<span class="fc" id="L369">                Coordinate head = snake.getHead();</span>
+<span class="fc bfc" id="L370" title="All 4 branches covered.">                if (isWall(head) || isOccupied(head, snake)) {</span>
+<span class="fc" id="L371">                    kill(snake.getId());</span>
+                }
+<span class="fc" id="L373">            }</span>
+
+<span class="fc bfc" id="L375" title="All 2 branches covered.">            if(snakes.values().stream().allMatch(Snake::isDead)) {</span>
+<span class="fc" id="L376">                gameOver = true;</span>
+            }
+        } finally {
+<span class="fc" id="L379">            rwLock.writeLock().unlock();</span>
+        }
+<span class="fc" id="L381">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

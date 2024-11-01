@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.gamemanagement</a> &gt; <span class="el_source">GameService.java</span></div><h1>GameService.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.gamemanagement;
+
+import me.schawe.multijsnake.gamemanagement.exceptions.InvalidMapException;
+import me.schawe.multijsnake.gamemanagement.player.PlayerId;
+import me.schawe.multijsnake.gamemanagement.player.PlayerInfo;
+import me.schawe.multijsnake.gamemanagement.websocket.WebSocketService;
+import me.schawe.multijsnake.snake.*;
+import me.schawe.multijsnake.snake.ai.*;
+import me.schawe.multijsnake.util.IdGenerator;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Service
+@EnableScheduling
+public class GameService {
+    private final WebSocketService webSocketService;
+    private final ApplicationEventPublisher applicationEventPublisher;
+
+<span class="fc" id="L24">    private final ConcurrentHashMap&lt;String, GameState&gt; gameStateMap = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L25">    private final ConcurrentHashMap&lt;PlayerId, PlayerInfo&gt; playerInfoMap = new ConcurrentHashMap&lt;&gt;();</span>
+
+    private final Map&lt;String, AutopilotDescription&gt; aiDescriptionMap;
+
+    private final Random random;
+
+<span class="fc" id="L31">    public GameService(WebSocketService webSocketService, ApplicationEventPublisher applicationEventPublisher) {</span>
+<span class="fc" id="L32">        this.webSocketService = webSocketService;</span>
+<span class="fc" id="L33">        this.applicationEventPublisher = applicationEventPublisher;</span>
+
+<span class="fc" id="L35">        this.aiDescriptionMap = aiDescriptions();</span>
+
+<span class="fc" id="L37">        random = new Random();</span>
+<span class="fc" id="L38">    }</span>
+
+    private GameState newGame(int width, int height, String id) {
+<span class="fc" id="L41">        GameState gameState = new GameState(width, height, id);</span>
+<span class="fc" id="L42">        return initGameState(gameState);</span>
+    }
+
+    private GameState initGameState(GameState gameState) {
+<span class="fc" id="L46">        int size = gameState.getWidth() * gameState.getHeight();</span>
+<span class="fc" id="L47">        gameState.setSnakeDiesCallback(x -&gt; snakeDied(x, size));</span>
+
+<span class="fc" id="L49">        String gameId = gameState.getId();</span>
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if(gameStateMap.containsKey(gameId)) {</span>
+<span class="fc" id="L52">            throw new InvalidMapException(&quot;This id '&quot; + gameState.getId() + &quot;' already exists!&quot;);</span>
+        }
+<span class="fc" id="L54">        gameStateMap.put(gameId, gameState);</span>
+
+<span class="fc" id="L56">        return gameState;</span>
+    }
+
+    @Scheduled(fixedRate = 300)
+    public void periodicUpdate() {
+<span class="fc" id="L61">        ArrayList&lt;String&gt; abandoned = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for (String id : allIds()) {</span>
+<span class="fc" id="L64">            GameState gameState = gameStateMap.get(id);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            if(gameState.isAbandoned()) {</span>
+                // can we remove the keys here directly? do we iterate over a copy of the key set?
+                // better be safe and remove them after the iteration, in case it is
+                // a reference, like apparently everything in Java
+<span class="fc" id="L69">                abandoned.add(id);</span>
+<span class="fc" id="L70">                continue;</span>
+            }
+<span class="fc bfc" id="L72" title="All 4 branches covered.">            if(!gameState.isPaused() &amp;&amp; !gameState.isGameOver()) {</span>
+<span class="fc" id="L73">                gameState.update();</span>
+<span class="fc" id="L74">                webSocketService.update(gameState);</span>
+            }
+<span class="fc" id="L76">        }</span>
+
+        // now delete the abandoned instances
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        for(String id : abandoned) {</span>
+<span class="fc" id="L80">            gameStateMap.remove(id);</span>
+<span class="fc" id="L81">        }</span>
+<span class="fc" id="L82">    }</span>
+
+    // TODO: this event should be thrown by `GameState`, but it is currently not part of the DI mechanism
+    // TODO: I would need to declare `GameState` a Component/Bean with Prototype scope
+    // TODO: and in turn can not instantiate myself (in tests, and especially in Python)
+    // TODO: Therefore, I have to refactor the `GameState` and also this class to implement this properly
+    private void snakeDied(Snake snake, int size) {
+<span class="fc" id="L89">        SnakeDiesEvent snakeDiesEvent = new SnakeDiesEvent(this, snake, size);</span>
+<span class="fc" id="L90">        applicationEventPublisher.publishEvent(snakeDiesEvent);</span>
+<span class="fc" id="L91">    }</span>
+
+    public GameState idToGame(String id) {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if(!gameStateMap.containsKey(id)) {</span>
+<span class="nc" id="L95">            throw new InvalidMapException(id);</span>
+        }
+
+<span class="fc" id="L98">        return gameStateMap.get(id);</span>
+    }
+
+    public void close(String id) {
+<span class="fc" id="L102">        gameStateMap.remove(id);</span>
+<span class="fc" id="L103">    }</span>
+
+    private void registerPlayer(PlayerId playerId, PlayerInfo playerInfo) {
+<span class="fc" id="L106">        playerInfoMap.put(playerId, playerInfo);</span>
+<span class="fc" id="L107">    }</span>
+
+    private SnakeId playerToSnake(PlayerId playerId) {
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if(!playerInfoMap.containsKey(playerId)) {</span>
+<span class="nc" id="L111">            throw new InvalidMapException(&quot;PlayerId: &quot; + playerId.id());</span>
+        }
+
+<span class="fc" id="L114">        return playerInfoMap.get(playerId).snakeId();</span>
+    }
+
+    public Set&lt;String&gt; allIds() {
+<span class="fc" id="L118">        return gameStateMap.keySet();</span>
+    }
+
+    public void pause(PlayerId playerId) {
+<span class="fc" id="L122">        SnakeId snakeId = playerToSnake(playerId);</span>
+<span class="fc" id="L123">        GameState state = idToGame(snakeId.getId());</span>
+<span class="fc" id="L124">        state.setPause(true);</span>
+<span class="fc" id="L125">        webSocketService.update(state);</span>
+<span class="fc" id="L126">    }</span>
+
+    public void unpause(PlayerId playerId) {
+<span class="fc" id="L129">        SnakeId snakeId = playerToSnake(playerId);</span>
+<span class="fc" id="L130">        GameState state = idToGame(snakeId.getId());</span>
+<span class="fc" id="L131">        state.setPause(false);</span>
+<span class="fc" id="L132">        webSocketService.update(state);</span>
+<span class="fc" id="L133">    }</span>
+
+    public void reset(PlayerId playerId) {
+<span class="fc" id="L136">        SnakeId snakeId = playerToSnake(playerId);</span>
+<span class="fc" id="L137">        GameState state = idToGame(snakeId.getId());</span>
+<span class="fc" id="L138">        state.reset();</span>
+<span class="fc" id="L139">        webSocketService.update(state);</span>
+<span class="fc" id="L140">    }</span>
+
+    public PlayerId joinNewGame(String sessionId, String id, int width, int height) {
+<span class="fc" id="L143">        newGame(width, height, id);</span>
+
+<span class="fc" id="L145">        return join(sessionId, id);</span>
+    }
+
+    public PlayerId join(String sessionId, String id) {
+        // if the id does not exist, make it exist
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if(!gameStateMap.containsKey(id)) {</span>
+<span class="fc" id="L151">            newGame(20, 20, id);</span>
+        }
+
+<span class="fc" id="L154">        SnakeId snakeId = idToGame(id).addSnake();</span>
+<span class="fc" id="L155">        String name = idToGame(id).getSnake(snakeId).getName();</span>
+<span class="fc" id="L156">        PlayerId playerId = new PlayerId(IdGenerator.gen(random));</span>
+<span class="fc" id="L157">        PlayerInfo playerInfo = new PlayerInfo(playerId, snakeId, sessionId, name);</span>
+<span class="fc" id="L158">        registerPlayer(playerId, playerInfo);</span>
+<span class="fc" id="L159">        GameState state = idToGame(id);</span>
+
+<span class="fc" id="L161">        webSocketService.update(state);</span>
+<span class="fc" id="L162">        webSocketService.updateHighscore(state.getWidth()*state.getHeight());</span>
+<span class="fc" id="L163">        webSocketService.updateGlobalHighscore();</span>
+<span class="fc" id="L164">        webSocketService.notifyJoined(playerInfo);</span>
+
+<span class="fc" id="L166">        return playerId;</span>
+    }
+
+    public void move(PlayerId playerId, Move move) {
+<span class="fc" id="L170">        SnakeId snakeId = playerToSnake(playerId);</span>
+<span class="fc" id="L171">        idToGame(snakeId.getId()).turn(snakeId, move);</span>
+<span class="fc" id="L172">    }</span>
+
+    public void setName(PlayerId playerId, String name) {
+<span class="fc" id="L175">        SnakeId snakeId = playerToSnake(playerId);</span>
+<span class="fc" id="L176">        GameState state = idToGame(snakeId.getId());</span>
+<span class="fc" id="L177">        state.changeName(snakeId, name);</span>
+
+<span class="fc" id="L179">        webSocketService.update(state);</span>
+<span class="fc" id="L180">    }</span>
+
+    public void addAI(PlayerId playerId, String key) {
+<span class="fc" id="L183">        SnakeId snakeId = playerToSnake(playerId);</span>
+<span class="fc" id="L184">        GameState state = idToGame(snakeId.getId());</span>
+
+<span class="fc" id="L186">        Autopilot autopilot = new AutopilotFactory().build(key);</span>
+
+<span class="fc" id="L188">        state.addAISnake(autopilot);</span>
+
+<span class="fc" id="L190">        webSocketService.update(state);</span>
+<span class="fc" id="L191">    }</span>
+
+    public static Map&lt;String, AutopilotDescription&gt; aiDescriptions() {
+<span class="fc" id="L194">        return new AutopilotFactory().getAutopilots();</span>
+    }
+
+    public List&lt;AutopilotDescription&gt; listAi() {
+<span class="fc" id="L198">        return new ArrayList&lt;&gt;(aiDescriptionMap.values());</span>
+    }
+
+    public Optional&lt;PlayerInfo&gt; findPlayerBySession(String sessionId) {
+<span class="fc" id="L202">        return playerInfoMap.values().stream().filter(info -&gt; info.sessionId().equals(sessionId)).findFirst();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

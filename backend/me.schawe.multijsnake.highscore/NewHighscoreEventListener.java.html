@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NewHighscoreEventListener.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.highscore</a> &gt; <span class="el_source">NewHighscoreEventListener.java</span></div><h1>NewHighscoreEventListener.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.highscore;
+
+import me.schawe.multijsnake.gamemanagement.websocket.WebSocketService;
+import me.schawe.multijsnake.snake.Snake;
+import me.schawe.multijsnake.snake.SnakeDiesEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.stereotype.Component;
+
+import java.util.Date;
+
+@Component
+public class NewHighscoreEventListener implements ApplicationListener&lt;SnakeDiesEvent&gt; {
+    private final HighscoreRepository highscoreRepository;
+    private final WebSocketService webSocketService;
+
+<span class="fc" id="L16">    public NewHighscoreEventListener(HighscoreRepository highscoreRepository, WebSocketService webSocketService) {</span>
+<span class="fc" id="L17">        this.highscoreRepository = highscoreRepository;</span>
+<span class="fc" id="L18">        this.webSocketService = webSocketService;</span>
+<span class="fc" id="L19">    }</span>
+
+    private void updateHighscore(Snake snake, int size) {
+<span class="fc" id="L22">        var score = snake.getLength();</span>
+
+        // do not save highscore for AI snakes
+        // also do not save very low scores
+<span class="pc bpc" id="L26" title="1 of 4 branches missed.">        if (snake.ai().isPresent() || score &lt; 5) {</span>
+<span class="fc" id="L27">            return;</span>
+        }
+
+<span class="nc" id="L30">        Date date = new Date();</span>
+<span class="nc" id="L31">        Highscore highscore = new Highscore(score, snake.getName(), size, date);</span>
+<span class="nc" id="L32">        highscoreRepository.save(highscore);</span>
+<span class="nc" id="L33">        webSocketService.updateHighscore(size);</span>
+<span class="nc" id="L34">        webSocketService.updateGlobalHighscore();</span>
+<span class="nc" id="L35">    }</span>
+
+    @Override
+    public void onApplicationEvent(SnakeDiesEvent event) {
+<span class="fc" id="L39">        updateHighscore(event.getSnake(), event.getSize());</span>
+<span class="fc" id="L40">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GreedyAutopilot.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.snake.ai</a> &gt; <span class="el_source">GreedyAutopilot.java</span></div><h1>GreedyAutopilot.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.snake.ai;
+
+import me.schawe.multijsnake.snake.GameState;
+import me.schawe.multijsnake.snake.Move;
+import me.schawe.multijsnake.snake.Snake;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+
+public class GreedyAutopilot implements Autopilot {
+<span class="fc" id="L12">    private enum Strategy {</span>
+<span class="fc" id="L13">        horizontal,</span>
+<span class="fc" id="L14">        vertical,</span>
+<span class="fc" id="L15">        diagonal;</span>
+
+        public static Strategy random() {
+<span class="fc" id="L18">            double r = 3. * Math.random();</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">            if(r &lt; 1) {</span>
+<span class="fc" id="L20">                return Strategy.horizontal;</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">            } else if (r &lt; 2) {</span>
+<span class="fc" id="L22">                return Strategy.vertical;</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">            } else if (r &lt; 3) {</span>
+<span class="fc" id="L24">                return Strategy.diagonal;</span>
+            }
+            // this will not happen
+<span class="nc" id="L27">            return Strategy.diagonal;</span>
+        }
+    }
+
+    private final Random random;
+    private final Strategy strategy;
+
+<span class="fc" id="L34">    public GreedyAutopilot() {</span>
+<span class="fc" id="L35">        random = new Random();</span>
+<span class="fc" id="L36">        strategy = Strategy.random();</span>
+<span class="fc" id="L37">    }</span>
+
+    private Optional&lt;Move&gt; horizontalDirection(int sourceX, int targetX) {
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (sourceX &lt; targetX)</span>
+<span class="nc" id="L41">            return Optional.of(Move.right);</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        else if (sourceX &gt; targetX)</span>
+<span class="fc" id="L43">            return Optional.of(Move.left);</span>
+        else
+<span class="nc" id="L45">            return Optional.empty();</span>
+    }
+
+    private Optional&lt;Move&gt; verticalDirection(int sourceY, int targetY) {
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (sourceY &lt; targetY)</span>
+<span class="nc" id="L50">            return Optional.of(Move.down);</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        else if (sourceY &gt; targetY)</span>
+<span class="fc" id="L52">            return Optional.of(Move.up);</span>
+        else
+<span class="nc" id="L54">            return Optional.empty();</span>
+    }
+
+    private Move shortestWay(GameState gameState, Snake snake) {
+<span class="pc bpc" id="L58" title="1 of 4 branches missed.">        switch (strategy) {</span>
+            case horizontal:
+<span class="fc" id="L60">                return horizontalDirection(snake.getHead().getX(), gameState.getFood().getX())</span>
+<span class="fc" id="L61">                        .orElse(</span>
+<span class="fc" id="L62">                                verticalDirection(snake.getHead().getY(), gameState.getFood().getY())</span>
+<span class="fc" id="L63">                                        .orElse(snake.getHeadDirection())</span>
+                        );
+            case vertical:
+<span class="fc" id="L66">                return verticalDirection(snake.getHead().getY(), gameState.getFood().getY())</span>
+<span class="fc" id="L67">                        .orElse(</span>
+<span class="fc" id="L68">                                horizontalDirection(snake.getHead().getX(), gameState.getFood().getX())</span>
+<span class="fc" id="L69">                                        .orElse(snake.getHeadDirection())</span>
+                        );
+            case diagonal:
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">                if (Math.abs(snake.getHead().getY() - gameState.getFood().getY()) &gt; Math.abs(snake.getHead().getX() - gameState.getFood().getX())) {</span>
+<span class="fc" id="L73">                    return verticalDirection(snake.getHead().getY(), gameState.getFood().getY()).orElse(snake.getHeadDirection());</span>
+                } else {
+<span class="nc" id="L75">                    return horizontalDirection(snake.getHead().getX(), gameState.getFood().getX()).orElse(snake.getHeadDirection());</span>
+                }
+        }
+        // this will not happen
+<span class="nc" id="L79">        throw new RuntimeException(&quot;unreachable!&quot;);</span>
+    }
+
+    @Override
+    public Move suggest(GameState gameState, Snake snake) {
+<span class="fc" id="L84">        Move bestMove = shortestWay(gameState, snake);</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if(isSafeMove(gameState, snake, bestMove)) {</span>
+<span class="fc" id="L86">            return bestMove;</span>
+        } else {
+<span class="nc" id="L88">            List&lt;Move&gt; moves = possibleMoves(gameState, snake);</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            if (moves.size() &lt;= 0) {</span>
+<span class="nc" id="L90">                return snake.getHeadDirection();</span>
+            }
+<span class="nc" id="L92">            int r = random.nextInt(moves.size());</span>
+<span class="nc" id="L93">            return moves.get(r);</span>
+        }
+    }
+
+    @Override
+    public String generateName() {
+<span class="fc" id="L99">         String[] names = {</span>
+                 &quot;Rhombus&quot;, &quot;Trapezoid&quot;, &quot;Trapezium&quot;, &quot;Hexagon&quot;, &quot;Pentagon&quot;, &quot;Octagon&quot;,
+                 &quot;Heptagon&quot;, &quot;Nonagon&quot;, &quot;Decagon&quot;, &quot;Octahedron&quot;, &quot;Dodecahedron&quot;, &quot;Icosahedron&quot;,
+                 &quot;Oloid&quot;, &quot;Sphericon&quot;, &quot;Hyperboloid&quot;, &quot;Isochrone&quot;, &quot;Horopter&quot;, &quot;Syntractrix&quot;,
+                 &quot;Trochoid&quot;, &quot;Nephroid&quot;
+        };
+
+<span class="fc" id="L106">        int r = random.nextInt(names.length);</span>
+<span class="fc" id="L107">        return names[r];</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

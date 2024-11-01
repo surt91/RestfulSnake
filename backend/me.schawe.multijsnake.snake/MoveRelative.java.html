@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MoveRelative.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.snake</a> &gt; <span class="el_source">MoveRelative.java</span></div><h1>MoveRelative.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.snake;
+
+<span class="fc" id="L3">public enum MoveRelative {</span>
+<span class="fc" id="L4">    left,</span>
+<span class="fc" id="L5">    straight,</span>
+<span class="fc" id="L6">    right;</span>
+
+    public Move toMove(Move lastHeadDirection) {
+<span class="pc bpc" id="L9" title="1 of 4 branches missed.">        return switch (this) {</span>
+<span class="fc" id="L10">            case left -&gt; lastHeadDirection.rLeft();</span>
+<span class="fc" id="L11">            case right -&gt; lastHeadDirection.rRight();</span>
+<span class="fc" id="L12">            case straight -&gt; lastHeadDirection;</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

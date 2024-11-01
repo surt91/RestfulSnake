@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Move.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.snake</a> &gt; <span class="el_source">Move.java</span></div><h1>Move.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.snake;
+
+import java.util.Optional;
+import java.util.Random;
+
+<span class="fc" id="L6">public enum Move {</span>
+<span class="fc" id="L7">    left,</span>
+<span class="fc" id="L8">    right,</span>
+<span class="fc" id="L9">    up,</span>
+<span class="fc" id="L10">    down;</span>
+
+    public boolean isOpposite(Move other) {
+<span class="pc bpc" id="L13" title="1 of 16 branches missed.">        return this == left &amp;&amp; other == right</span>
+                || this == right &amp;&amp; other == left
+                || this == up &amp;&amp; other == down
+                || this == down &amp;&amp; other == up;
+    }
+
+    public Optional&lt;Move&gt; toNext(Move previous) {
+        // do not turn by 180 degree
+<span class="fc" id="L21">        Move next = this;</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if(isOpposite(previous)) {</span>
+<span class="fc" id="L23">            return Optional.empty();</span>
+        }
+
+<span class="fc" id="L26">        return Optional.of(next);</span>
+    }
+
+    public Coordinate toCoord() {
+<span class="pc bpc" id="L30" title="1 of 5 branches missed.">        return switch (this) {</span>
+<span class="fc" id="L31">            case up -&gt; new Coordinate(0, -1);</span>
+<span class="fc" id="L32">            case down -&gt; new Coordinate(0, 1);</span>
+<span class="fc" id="L33">            case left -&gt; new Coordinate(-1, 0);</span>
+<span class="fc" id="L34">            case right -&gt; new Coordinate(1, 0);</span>
+        };
+    }
+
+    public static Move random(Random rand) {
+<span class="fc" id="L39">        double r = 4. * rand.nextFloat();</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if(r &lt; 1) {</span>
+<span class="fc" id="L41">            return Move.up;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        } else if (r &lt; 2) {</span>
+<span class="fc" id="L43">            return Move.down;</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        } else if (r &lt; 3) {</span>
+<span class="fc" id="L45">            return Move.left;</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        } else if (r &lt; 4) {</span>
+<span class="fc" id="L47">            return Move.right;</span>
+        }
+        // this will not happen
+<span class="nc" id="L50">        throw new RuntimeException(&quot;unreachable!&quot;);</span>
+    }
+
+    public static Move random() {
+<span class="fc" id="L54">        return random(new Random());</span>
+    }
+
+    public Move rLeft() {
+<span class="pc bpc" id="L58" title="1 of 5 branches missed.">        return switch (this) {</span>
+<span class="fc" id="L59">            case up -&gt; Move.left;</span>
+<span class="fc" id="L60">            case down -&gt; Move.right;</span>
+<span class="fc" id="L61">            case left -&gt; Move.down;</span>
+<span class="fc" id="L62">            case right -&gt; Move.up;</span>
+        };
+    }
+
+    public Move rRight() {
+<span class="pc bpc" id="L67" title="1 of 5 branches missed.">        return switch (this) {</span>
+<span class="fc" id="L68">            case up -&gt; Move.right;</span>
+<span class="fc" id="L69">            case down -&gt; Move.left;</span>
+<span class="fc" id="L70">            case left -&gt; Move.up;</span>
+<span class="fc" id="L71">            case right -&gt; Move.down;</span>
+        };
+    }
+
+    public Move straight() {
+<span class="fc" id="L76">        return this;</span>
+    }
+
+    public Move back() {
+<span class="pc bpc" id="L80" title="1 of 5 branches missed.">        return switch (this) {</span>
+<span class="fc" id="L81">            case up -&gt; Move.down;</span>
+<span class="fc" id="L82">            case down -&gt; Move.up;</span>
+<span class="fc" id="L83">            case left -&gt; Move.right;</span>
+<span class="fc" id="L84">            case right -&gt; Move.left;</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KerasModelAutopilot.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">MultiJSnake</a> &gt; <a href="index.source.html" class="el_package">me.schawe.multijsnake.snake.ai</a> &gt; <span class="el_source">KerasModelAutopilot.java</span></div><h1>KerasModelAutopilot.java</h1><pre class="source lang-java linenums">package me.schawe.multijsnake.snake.ai;
+
+import me.schawe.multijsnake.snake.exceptions.AutopilotException;
+import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.deeplearning4j.nn.modelimport.keras.KerasModelImport;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.nd4j.common.io.ClassPathResource;
+
+import java.util.Random;
+
+// https://deeplearning4j.konduit.ai/deeplearning4j/how-to-guides/keras-import
+public abstract class KerasModelAutopilot implements Autopilot {
+    protected final ComputationGraph modelFunctional;
+    protected final MultiLayerNetwork modelSequential;
+    protected final String pathToModel;
+
+<span class="fc" id="L17">    public KerasModelAutopilot(String pathToModel, boolean isFunctional) {</span>
+<span class="fc" id="L18">        this.pathToModel = pathToModel;</span>
+
+        // load model
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if(isFunctional) {</span>
+            try {
+<span class="fc" id="L23">                String savedModel = new ClassPathResource(pathToModel).getFile().getPath();</span>
+<span class="fc" id="L24">                modelFunctional = KerasModelImport.importKerasModelAndWeights(savedModel, false);</span>
+<span class="fc" id="L25">                modelSequential = null;</span>
+<span class="nc" id="L26">            } catch (Exception e) {</span>
+<span class="nc" id="L27">                throw new AutopilotException(&quot;failed loading a functional keras model: '&quot; + pathToModel + &quot;'&quot;);</span>
+<span class="fc" id="L28">            }</span>
+        } else {
+            try {
+<span class="fc" id="L31">                String savedModel = new ClassPathResource(pathToModel).getFile().getPath();</span>
+<span class="fc" id="L32">                modelSequential = KerasModelImport.importKerasSequentialModelAndWeights(savedModel, false);</span>
+<span class="fc" id="L33">                modelFunctional = null;</span>
+<span class="nc" id="L34">            } catch (Exception e) {</span>
+<span class="nc" id="L35">                throw new AutopilotException(&quot;failed loading a sequential keras model: '&quot; + pathToModel + &quot;'&quot;);</span>
+<span class="fc" id="L36">            }</span>
+        }
+<span class="fc" id="L38">    }</span>
+
+    @Override
+    public String generateName() {
+<span class="fc" id="L42">        String[] names = {</span>
+                &quot;Cylex&quot;, &quot;Nanex&quot;, &quot;Voltra&quot;, &quot;Ionus&quot;, &quot;Hydrex&quot;, &quot;Vertron&quot;, &quot;Polybit&quot;, &quot;Cubicub&quot;,
+                &quot;Toroidus&quot;, &quot;Icosidon&quot;, &quot;Maniflex&quot;, &quot;Multiplus&quot;, &quot;Cebrenus&quot;, &quot;Tribon&quot;, &quot;Ozonex&quot;, &quot;Nitron&quot;,
+                &quot;Mechus&quot;, &quot;Protus&quot;, &quot;Omnius&quot;, &quot;Trion&quot;, &quot;Omicron&quot;, &quot;Ultrus&quot;, &quot;Isotoxon&quot;, &quot;Xubix&quot;, &quot;Cybrus&quot;,
+                &quot;Cybroid&quot;, &quot;Machinus&quot;, &quot;Prismus&quot;, &quot;Robonus&quot;, &quot;Integron&quot;, &quot;Tessellon&quot;, &quot;Protron&quot;, &quot;Strobus&quot;,
+                &quot;Mechanex&quot;, &quot;Zoplex&quot;, &quot;Retrion&quot;, &quot;Cyphorex&quot;, &quot;Robex&quot;, &quot;Robitron&quot;, &quot;Combinus&quot;, &quot;Arcus&quot;,
+                &quot;Fluxitron&quot;, &quot;Magnetron&quot;, &quot;Positrex&quot;, &quot;Negabit&quot;, &quot;Antiplex&quot;, &quot;Technus&quot;, &quot;Synthon&quot;, &quot;Datus&quot;,
+                &quot;Maxus&quot;, &quot;Gyricon&quot;, &quot;Lazerex&quot;, &quot;Radex&quot;, &quot;Radion&quot;, &quot;Teslus&quot;, &quot;Voxus&quot;, &quot;Voxon&quot;,
+                &quot;Plexon&quot;, &quot;Itron&quot;, &quot;Techron&quot;, &quot;Extron&quot;, &quot;Terminex&quot;, &quot;Valicron&quot;, &quot;Quatron&quot;, &quot;Helixon&quot;, &quot;Leptonex&quot;,
+                &quot;Nucleux&quot;, &quot;Cybro&quot;, &quot;Solaron&quot;, &quot;Spectron&quot;, &quot;Enertron&quot;, &quot;Kaonus&quot;, &quot;Negitron&quot;, &quot;Atomiton&quot;,
+                &quot;Positrus&quot;, &quot;Symmetrus&quot;, &quot;Qubex&quot;
+        };
+
+<span class="fc" id="L55">        Random random = new Random();</span>
+<span class="fc" id="L56">        int r = random.nextInt(names.length);</span>
+<span class="fc" id="L57">        return names[r];</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
